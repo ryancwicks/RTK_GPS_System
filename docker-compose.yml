@@ -1,0 +1,22 @@
+version: "3.3"
+services:
+  time_server:
+    build: ./ChronyServer
+    volumes:
+      - shared_var:/var/run
+    cap_add: 
+      - SYS_TIME
+    network_mode: host
+  gps_server:
+    build: ./GPSServer
+    volumes:
+      - /dev:/dev
+      - shared_var:/var/run
+    privileged: true
+    network_mode: host
+    tty: true
+    depends_on: 
+      - "time_server"
+
+volumes:
+  shared_var:
