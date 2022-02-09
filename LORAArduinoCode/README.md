@@ -22,5 +22,5 @@ I was able to send data at 8.9kbps a distance of 1m with the following settings:
 int state = radio.begin(915.0, 500.0, 7, 5, 0x34, 20, 10, 0, false);
 ```
 
-No idea about range yet.
+No idea about range yet. I could up the output power to +22db max if needed. Careful with heat in this situation, it's not clear if the Sparkfun modules use a LDO or buck converter.
 
