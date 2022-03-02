@@ -1,9 +1,10 @@
 use actix::prelude::*;
 use actix_files::Files;
+
 mod web_socket;
 mod api;
 mod gps_interface;
-
+mod lora_streaming;
 
 const STATIC_FILES: &str= "./static";
 
@@ -33,7 +34,8 @@ async fn main() -> std::io::Result<()> {
             // websocket route
             .service(web::resource("/api/subscribe").route(web::get().to(web_socket::ws_index)))
             // rest API
-            .service(web::scope("/api"))
+            .service(web::scope("/api")
+                        .service(api::shutdown))
             
     })
     .bind(("127.0.0.1", 8080))?

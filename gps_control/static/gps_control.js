@@ -37,12 +37,17 @@ async function build_page() {
         row.appendChild(value_field); 
     }
 
+    let shutdown_link = document.createElement("A");
+    shutdown_link.href = api.shutdown;
+    shutdown_link.innerHTML = "Shutdown";
+    container.appendChild(shutdown_link);
+
     //Setup the GPS data socket stream
     let socket = api.subscribe();
-    console.log(socket);
+    //console.log(socket);
 
     socket.addEventListener('open', function (event) {
-        console.log(`Socket connected`);
+        //console.log(`Socket connected`);
     });
 
     socket.addEventListener('error', function (event) {
@@ -50,7 +55,7 @@ async function build_page() {
     });
 
     socket.addEventListener('close', function (event) {
-        console.log(`Websocket Closed`);
+        //console.log(`Websocket Closed`);
     });
     socket.addEventListener('message', function (event) {
         var msg = JSON.parse(event.data);

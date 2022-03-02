@@ -43,7 +43,7 @@ pub struct GPSEvent {
 pub async fn ws_index(r: HttpRequest, stream: web::Payload, data: web::Data<Addr<GPSWebSocketMonitor>>,) -> Result<HttpResponse, Error> {
     log::info!("{:?}", r);
     let uuid = Uuid::new_v4();
-    let (addr, res) = ws::start_with_addr(GPSWebSocket::new(&uuid, data.get_ref()), &r, stream)?;
+    let (addr, res) = ws::WsResponseBuilder::new(GPSWebSocket::new(&uuid, data.get_ref()), &r, stream).start_with_addr()?;
 
     data.get_ref().do_send(RegisterGPSWebSocketClient { uuid: uuid, addr: addr });
 

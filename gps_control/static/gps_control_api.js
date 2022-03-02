@@ -6,6 +6,7 @@ function api_instance() {
 
     let requests = {
         socket_subscribe: "/api/subscribe",
+        shutdown: "/api/shutdown",
     };
 
 
@@ -20,6 +21,7 @@ function api_instance() {
     }
 
     return {
-        subscribe: subscribe
+        subscribe: subscribe,
+        shutdown: requests.shutdown,
     };
 }

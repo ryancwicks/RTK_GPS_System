@@ -100,17 +100,6 @@ impl GPSInterface {
 
         let socket_addr = SocketAddr::new(self.ip_address, self.port);
 
-        //wait for the gpsd daemone if it's not already running.
-        let mut countdown = 10;
-        if !port_scanner::scan_port_addr(&socket_addr) {
-            log::info!("Waiting for GPSD service to start.");
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            countdown -= 1;
-            if countdown == 0 {
-                panic!("Could not connect to GPSD server after 10s, something is wrong.");
-            }
-        }
-
         let socket = TcpStream::connect(&socket_addr).await.expect( &format!("Failed to connect to the GPSD daemon at ip {}:{}", self.ip_address, self.port) );
 
         let mut framed = Framed::new(socket, LinesCodec::new());
@@ -143,6 +132,7 @@ impl GPSInterface {
                         self.gps.alt = t.alt.unwrap_or(0.0);
                         self.gps.track = t.track.unwrap_or(0.0);
                         self.gps.speed = t.speed.unwrap_or(0.0);
+                        self.gps.time = t.time.unwrap_or("".to_string());
                     },
                     UnifiedResponse::Sky(_s) => {}//log::debug!("Sky {:?}", s),
                     UnifiedResponse::Pps(p) => log::debug!("PPS {:?}", p),
@@ -214,6 +204,7 @@ impl GPSControl {
     }
 
     fn set_raw_mode(&self) {
+
         log::info!("Setting GPS into raw binary mode.");
         let _output = Command::new ("gpsctl").arg("-s").arg(GPS_BAUDRATE).output().expect("Failed to execute gpsctl.");
         log::info!("Baudrate set to {}.", GPS_BAUDRATE)
