@@ -1,0 +1,46 @@
+---
+- name: Setup the GPSD process
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: "yes"
+        force_apt_get: "yes"
+
+    - name: Install gpsd package
+      apt:
+        pkg:
+        - gpsd
+      
+    - name: Unarchive the program
+      ansible.builtin.unarchive:
+        src: http://download-mirror.savannah.gnu.org/releases/gpsd/gpsd-3.23.1.tar.gz
+        dest: /tmp
+        remote_src: true
+    
+    - name: Build GPSD
+      console: scons
+      args:
+        chdir: /tmp/gpsd-3.23.1
+
+    - name: Install GPSD
+      console: scons udev-install
+      args:
+        chdir: /tmp/gpsd-3.23.1
+        
+
+    - name: Copy over GPSD config file
+      copy:
+        src: ../templates/gpsd.conf
+        dest: /etc/default/gpsd
+
+    - name: Set GPSD to run on startup
+      ansible.builtin.systemd:
+        state: restarted
+        daemon_reload: yes
+        name: gpsd
+
+
+    

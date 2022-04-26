@@ -1,0 +1,25 @@
+---
+- name: Disable the bluetooth on the Raspberry Pi and use it as an additional serial port instead.
+  hosts: all
+  become: yes
+
+  tasks:
+    
+    - name: Test for GPS config line
+      shell: grep -c "# Use the /dev/ttyAMA0 UART for user applications (GPS)" /boot/config.txt || true
+      register: test_grep_bt_disable
+
+    - name: Load the device tree overlay for PPS coming into GPIO4/Pin 7 on the Raspberry Pi GPIO
+      lineinfile:
+        dest: /boot/config.txt
+        line: |
+          # Use the /dev/ttyAMA0 UART for user applications (GPS), not Bluetooth
+          dtoverlay=pi3-disable-bt
+
+      when: test_grep_bt_disable.stdout == "0"
+
+    - name: Disable the hciuart task.
+      ansible.builtin.systemd:
+        state: stopped
+        enabled: no
+        name: hciuart

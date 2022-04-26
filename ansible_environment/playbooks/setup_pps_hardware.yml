@@ -1,0 +1,41 @@
+---
+- name: Setup the Raspberry Pi PPS kernel mode support.
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: "yes"
+        force_apt_get: "yes"
+
+    - name: Install pps-tools package
+      apt:
+        pkg:
+        - pps-tools
+
+    - name: Test for GPS config line
+      shell: grep -c "# enable GPS PPS" /boot/config.txt || true
+      register: test_grep_gps
+
+    - name: Load the device tree overlay for PPS coming into GPIO4/Pin 7 on the Raspberry Pi GPIO
+      lineinfile:
+        dest: /boot/config.txt
+        line: |
+          # enable GPS PPS
+          dtoverlay=pps-gpio,gpiopin={{ pps_in_gpio }}
+
+      when: test_grep_gps.stdout == "0"
+
+    - name: Test if the the pps-gpio module is in the gps modules
+      shell: grep -c "pps-gpio" /etc/modules || true
+      register: test_grep_modules
+
+    - name: Load the pps-gpio module on startup
+      lineinfile:
+        dest: /etc/modules
+        line: |
+          pps-gpio
+
+      when: test_grep_modules.stdout == "0"
+    

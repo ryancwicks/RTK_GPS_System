@@ -1,0 +1,36 @@
+---
+- name: Setup an NFS share on Ubuntu 20.04
+  hosts: all
+  become: yes
+
+  tasks:
+  - name: Update Apt Cache
+    apt:
+      update-cache: yes
+  
+  - name: Install nfs server
+    apt:
+      pkg:
+        - nfs-kernel-server
+
+  #- name: Open up firewall for nfs
+  #  community.general.ufw:
+  #    rule: allow
+  #    name: nfs
+
+  - name: Create NFS share in /etc/exports
+    copy:
+      content: |
+        /home/tguser/shared  192.168.50.0/24(rw,sync,no_all_squash,root_squash,no_subtree_check)        
+        /home/tguser/shared  192.168.42.0/24(rw,sync,no_all_squash,root_squash,no_subtree_check)        
+      dest: /etc/exports
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Enable the nfs server
+    ansible.builtin.systemd:
+      name: nfs-server
+      state: started
+      enabled: yes
+

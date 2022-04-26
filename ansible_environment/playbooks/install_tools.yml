@@ -1,0 +1,18 @@
+---
+- name: Install general software
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: "yes"
+        force_apt_get: "yes"
+
+    - name: Install packages with apt
+      apt:
+        pkg:
+        - vim
+        - rsync
+        - gpsd-clients
+

@@ -3,6 +3,7 @@ services:
   time_server:
     build: ./ChronyServer
     volumes:
+      - /dev:/dev
       - shared_var:/var/run
     cap_add: 
       - SYS_TIME
@@ -13,7 +14,8 @@ services:
       - /dev:/dev
       - shared_var:/var/run
     privileged: true
-    network_mode: host
+    ports:
+      - 2947:2947
     tty: true
     depends_on: 
       - "time_server"

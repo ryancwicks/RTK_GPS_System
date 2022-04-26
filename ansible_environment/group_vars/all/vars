@@ -1,0 +1,6 @@
+---
+username: pi
+application_directory: "/home/pi/bin"
+
+system_password: "{{vault_system_password}}"
+...

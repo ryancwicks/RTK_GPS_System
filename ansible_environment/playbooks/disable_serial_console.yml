@@ -1,0 +1,19 @@
+---
+- name: Disable the serial console to get access to another hardware serial port.
+  hosts: all
+  become: yes
+
+  tasks:
+
+    - name: Disable the serial console task
+      ansible.builtin.systemd:
+        state: stopped
+        enabled: no
+        name: serial-getty@ttyAMA0.service
+    
+    - name: Turn off console kernel logging
+      replace: 
+        path: /boot/cmdline.txt
+        regexp: 'console=serial0,115200 console=tty1 ' 
+        replace: ''
+

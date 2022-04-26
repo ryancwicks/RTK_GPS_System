@@ -1,0 +1,30 @@
+---
+- name: Install Log2Ram to prevent thrashing on the board
+  hosts: all
+  become: yes
+
+  tasks:
+  - name: Unarchive the program
+    ansible.builtin.unarchive:
+      src: https://github.com/azlux/log2ram/archive/master.tar.gz
+      dest: /tmp
+      remote_src: true
+
+  - name: Change permissions on install script.
+    ansible.builtin.file:
+      path: /tmp/log2ram-master/install.sh
+      mode: '0755'
+
+  - name: Run installer for Log2Ram
+    command: /tmp/log2ram-master/install.sh
+  
+  - name: Remove the extracted directory.
+    ansible.builtin.file:
+      path: /tmp/log2ram-master
+      state: absent
+
+  - name: Remove the downloaded archive
+    ansible.builtin.file:
+      path: /tmp/master.tar.gz
+      state: absent
+...

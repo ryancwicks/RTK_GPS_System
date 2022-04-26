@@ -1,0 +1,16 @@
+
+version: "3.4"
+services:
+  ansible:
+    build: .
+    image: "ansible"
+    volumes:
+      - ./hosts:/etc/ansible/hosts
+      - ./.vault_pass:/etc/ansible/.vault_pass
+      - ./ansible.cfg:/etc/ansible/ansible.cfg
+      - ./playbooks:/tmp/ansible/playbooks
+      - ./group_vars:/tmp/ansible/group_vars
+      - ./templates:/tmp/ansible/templates
+      - ..:/tmp/ansible/project_files
+    env_file:
+      - vault_password.env

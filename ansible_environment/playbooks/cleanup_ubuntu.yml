@@ -1,0 +1,10 @@
+---
+- name: Touch Test Playbook
+  hosts: all
+
+  tasks:
+    - name: Remove downloaded debian packages
+      command: "rm -rf /var/cache/apt/archives/*.deb"
+      
+    - name: Remove leftover apt lists
+      command: "rm /var/lib/apt/lists/* -rf"

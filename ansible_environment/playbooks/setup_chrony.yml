@@ -1,0 +1,29 @@
+---
+- name: Setup the Chronyd time process.
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: "yes"
+        force_apt_get: "yes"
+
+    - name: Install chrony package
+      apt:
+        pkg:
+        - chrony
+    
+    - name: Copy over chrony config file
+      copy:
+        src: ../templates/chrony.conf
+        dest: /etc/chrony/chrony.conf
+
+    - name: Set chrony to run on startup
+      ansible.builtin.systemd:
+        state: restarted
+        daemon_reload: yes
+        name: chrony
+
+
+    

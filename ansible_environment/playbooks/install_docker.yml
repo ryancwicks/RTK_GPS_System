@@ -1,0 +1,72 @@
+---
+- name: Install Docker
+  hosts: all
+  become: yes
+
+  tasks:
+  - name: Update apt cache 
+    #shell: apt-get update
+    apt:
+      update_cache: yes
+
+  - name: Install dependencies
+    apt:
+      pkg:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - python3-pip
+  
+  - name: Adding Dockers official GPG key.
+    apt_key:
+      url: https://download.docker.com/linux/debian/gpg 
+      state: present
+
+  - name: Add Docker Repository
+    apt_repository:
+      repo: "deb [arch=arm64] https://download.docker.com/linux/debian bullseye stable"
+      state: present
+
+  - name: Update apt packages
+    apt:
+      update_cache: "yes"
+      force_apt_get: "yes"
+
+  - name: Install Docker
+    apt:
+      name: "docker-ce"
+      state: present
+      force_apt_get: "yes"    
+
+  - name: Create docker group
+    group:
+      name: "docker"
+      state: present
+
+  - name: Adding user {{ansible_user}} to docker group
+    user:
+      name: "{{ansible_user}}"
+      groups: "docker"
+      append: "yes"
+
+  # - name: Allow unencrypted connections to the local server.
+  #   ansible.builtin.template:
+  #     src: ../templates/docker-daemon.j2
+  #     dest: /etc/docker/daemon.json
+  #     owner: root
+  #     group: root
+  #     mode: '0644'
+
+  - name: Install Docker Python support.
+    pip: 
+      name: 
+        - docker
+        - docker-compose
+
+  - name: Restart service docker to pick up config changes.
+    ansible.builtin.systemd:
+      state: restarted
+      daemon_reload: yes
+      name: docker
+...
