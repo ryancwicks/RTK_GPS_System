@@ -1,7 +1,7 @@
 use tokio_util::codec::{Encoder, Decoder};
 use bytes::{Buf, BytesMut};
-//use miniz_oxide::inflate::decompress_to_vec;
-//use miniz_oxide::deflate::compress_to_vec;
+use miniz_oxide::inflate::decompress_to_vec;
+use miniz_oxide::deflate::compress_to_vec;
 
 const MAX: usize = 1024;
 
@@ -31,9 +31,9 @@ impl Encoder<LORAMessage> for LORAStream {
         match item {
             LORAMessage::Data(data) => {
 
-                //let compressed_data = compress_to_vec(&data, 8);
+                let compressed_data = compress_to_vec(&data, 8);
 
-                let size = 3 + data.len(); //size(2) + packet id (1) + data size
+                let size = 3 + compressed_data.len(); //size(2) + packet id (1) + data size
 
                 // Don't send a string if it is longer than the other end will
                 // accept.
@@ -47,7 +47,7 @@ impl Encoder<LORAMessage> for LORAStream {
                 // Convert the length into a byte array.
                 // The cast to u16 cannot overflow due to the length check above.
                 // +1 is to include the id tag.
-                let len_slice = u16::to_le_bytes((data.len() + 1) as u16);  
+                let len_slice = u16::to_le_bytes((compressed_data.len() + 1) as u16);  
                 let id = [0];             
 
                 // Reserve space in the buffer.
@@ -56,7 +56,7 @@ impl Encoder<LORAMessage> for LORAStream {
                 // Write the length and string to the buffer.
                 dst.extend_from_slice(&len_slice);
                 dst.extend_from_slice(&id);
-                dst.extend_from_slice(&data);
+                dst.extend_from_slice(&compressed_data);
                 Ok(())
             },
             LORAMessage::SignalStrength(strength) => {
@@ -121,17 +121,17 @@ impl Decoder for LORAStream {
         src.advance(2 + length);
 
         if id == 0 {
-            //let uncompressed_data = match decompress_to_vec(data.as_slice()) {
-            //    Ok(val) => val,
-            //    Err(err) => {
-            //        return Err(Box::new(std::io::Error::new(
-            //            std::io::ErrorKind::InvalidData,
-            //            format!("Decompression error: {:?}", err))
-            //        ))
-            //    }
-            //};
+            let uncompressed_data = match decompress_to_vec(data.as_slice()) {
+                Ok(val) => val,
+                Err(err) => {
+                   return Err(Box::new(std::io::Error::new(
+                       std::io::ErrorKind::InvalidData,
+                       format!("Decompression error: {:?}", err))
+                   ))
+               }
+            };
 
-            Ok(Some(LORAMessage::Data(data)))
+            Ok(Some(LORAMessage::Data(uncompressed_data)))
         } else if id == 1 {
             if data.len() != 4 {
                 return Err(Box::new(std::io::Error::new(
