@@ -94,8 +94,7 @@ impl Decoder for LORAStream {
         length_bytes.copy_from_slice(&src[..2]);
         let length = u16::from_le_bytes(length_bytes) as usize;
 
-        // Check that the length is not too large to avoid a denial of
-        // service attack where the server runs out of memory.
+        // Check that the length is not too large to avoid memory problems with bad communication.
         if length > MAX {
             return Err(Box::new(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
@@ -171,7 +170,7 @@ mod tests {
     }
 
     #[test]
-    fn test_data_encode () {
+    fn test_data () {
         let mut codec = LORAStream{};
         let test_data: Vec<u8> = b"Hello World! \r\n The quick brown fox jupmed over the lazy brown dog.".to_vec();
         let message = LORAMessage::Data (test_data.clone());
