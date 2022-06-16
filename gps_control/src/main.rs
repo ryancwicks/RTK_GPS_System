@@ -14,9 +14,9 @@ async fn main() -> std::io::Result<()> {
     log::info!("Starting UBlox GPS Control Software.");
     
     let socket_monitor = web_socket::GPSWebSocketMonitor::new().start();
-    let _gps_control = gps_interface::GPSControl::new(Some("127.0.0.1"), Some(2947)).start();
+    let gps_control = gps_interface::gps_control::GPSControl::new(Some("127.0.0.1"), Some(2947)).start();
     
-    let mut gps_interface = gps_interface::GPSInterface::new(Some("127.0.0.1"), Some(2947), socket_monitor.clone());
+    let mut gps_interface = gps_interface::gps_interface::GPSInterface::new(Some("127.0.0.1"), Some(2947), socket_monitor.clone());
 
     tokio::spawn( async move {
         gps_interface.run_handler().await;
@@ -25,7 +25,7 @@ async fn main() -> std::io::Result<()> {
     use actix_web::{middleware, web, App, HttpServer};
     HttpServer::new(move || {
         App::new()
-            .app_data(actix_web::web::Data::new(socket_monitor.clone()))
+            .app_data(actix_web::web::Data::new((socket_monitor.clone(), gps_control.clone())))
             // enable logger
             .wrap(middleware::Logger::default())
             // serve static files
@@ -35,6 +35,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/api/subscribe").route(web::get().to(web_socket::ws_index)))
             // rest API
             .service(web::scope("/api")
+                        .service(api::start_rtk)
                         .service(api::shutdown))
             
     })

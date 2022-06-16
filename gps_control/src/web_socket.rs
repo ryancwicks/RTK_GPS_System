@@ -7,7 +7,8 @@ use actix_web_actors::ws;
 use uuid::Uuid;
 use std::collections::HashMap;
 
-use crate::gps_interface::GPSData;
+use crate::gps_interface::gps_control::GPSControl;
+use crate::gps_interface::gps_interface::GPSData;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -40,12 +41,12 @@ pub struct GPSEvent {
 
 
 /// do websocket handshake and start `MyWebSocket` actor
-pub async fn ws_index(r: HttpRequest, stream: web::Payload, data: web::Data<Addr<GPSWebSocketMonitor>>,) -> Result<HttpResponse, Error> {
+pub async fn ws_index(r: HttpRequest, stream: web::Payload, data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>,) -> Result<HttpResponse, Error> {
     log::info!("{:?}", r);
     let uuid = Uuid::new_v4();
-    let (addr, res) = ws::WsResponseBuilder::new(GPSWebSocket::new(&uuid, data.get_ref()), &r, stream).start_with_addr()?;
+    let (addr, res) = ws::WsResponseBuilder::new(GPSWebSocket::new(&uuid, &data.get_ref().0), &r, stream).start_with_addr()?;
 
-    data.get_ref().do_send(RegisterGPSWebSocketClient { uuid: uuid, addr: addr });
+    (&data.get_ref().0).do_send(RegisterGPSWebSocketClient { uuid: uuid, addr: addr });
 
     log::info!("{:?}", res);
     Ok(res)

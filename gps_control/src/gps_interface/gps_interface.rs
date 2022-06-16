@@ -1,20 +1,14 @@
-use std::net::{IpAddr, Ipv4Addr, SocketAddr};
+
 use futures::prelude::*;
 use gpsd_proto::UnifiedResponse;
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 use tokio_util::codec::LinesCodec;
-use port_scanner;
-use std::process::Command;
 use serde::Serialize;
 use actix::prelude::*;
-use actix::Message;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use crate::web_socket;
-
-const UBLOX_VERSION: &str = "27.30";
-const GPS_BAUDRATE: &str = "115200";
-const UBX_ACK: &str = "UBX-ACK-ACK:";
 
 #[derive(Serialize, Clone, Debug)]
 pub struct GPSData {
@@ -163,101 +157,6 @@ impl GPSInterface {
 
 }
 
-///GPSControl message, Start GPS at correct baudrate and in raw binary mode.
-#[derive(Message)]
-#[rtype(result="Result<(), std::io::Error>")]
-struct InitializeGPS {}
 
-
-///GPS control strucutre, used to set up the the gpsd server through a combination of command line gpsctl and ubxtool commands.
-pub struct GPSControl {
-    pub ip_address: IpAddr,
-    pub port: u16,
-    gpsd_command: Option<std::process::Child>,
-}
-
-impl GPSControl {
-    pub fn new (ip_address: Option<&str>, 
-                port: Option<u16>  ) -> Self {
-
-        let ip_address = match ip_address {
-            Some(ip) => ip,
-            None => "127.0.0.1"
-        };
-        let port = match port {
-            Some(p) => p,
-            None => 2947
-        };
-
-        let ip_address = match ip_address.parse::<IpAddr>() {
-            Ok(val) => val,
-            Err(e) => {
-                log::error!("Failed to parse input ip address: {:?}", e);
-                IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1))
-            }
-        };
-        GPSControl {
-            ip_address: ip_address,
-            port: port,
-            gpsd_command: None
-        }    
-    }
-
-    fn set_raw_mode(&self) {
-
-        log::info!("Setting GPS into raw binary mode.");
-        let _output = Command::new ("gpsctl").arg("-s").arg(GPS_BAUDRATE).output().expect("Failed to execute gpsctl.");
-        log::info!("Baudrate set to {}.", GPS_BAUDRATE)
-;            
-        let ubx_commands = vec![
-                            ("-p", "RESET"),
-                            ("-d", "NMEA"),
-                            ("-e", "BINARY"),
-                            ("-e", "GLONASS"),
-                            ("-d", "BEIDOU"),
-                            ("-d", "GALILEO"),
-                            ("-d", "SBAS"),
-                            ("-e", "GPS"),
-                            ("-e", "RAWX"),
-                            ("-z", "CFG-MSGOUT-UBX_RXM_RAWX_USB,1")
-                        ];
-        for (flag, configuration) in ubx_commands {
-            let output = Command::new("ubxtool").arg("-P").arg(UBLOX_VERSION).arg(flag).arg(configuration).output().expect("ubxtool failed  to run");
-            let ubx_output = String::from_utf8_lossy(&output.stdout);
-            if ubx_output.contains(UBX_ACK) {
-                log::info!("ubxtool successfully ran with {} {} flags.", flag, configuration);
-            } else {
-                log::info!("ubxtool failed with {} {} flags.", flag, configuration);
-            }
-
-
-        }
-        
-    }
-}
-
-impl Actor for GPSControl {
-    type Context = Context<Self>;
-
-    fn started(&mut self, _: &mut Self::Context) {
-        let socket_addr = SocketAddr::new(self.ip_address, self.port);
-
-        //Start the gpsd daemone if it's not already running.
-        if !port_scanner::scan_port_addr(&socket_addr) {
-            log::info!("Starting GPSD Service.");
-            self.gpsd_command = Some(Command::new("docker-compose")
-                                .arg("run")
-                                .arg("gps_server")
-                                .current_dir("../")
-                                .spawn()
-                                .expect("The GPSD daemon failed to start."));
-            std::thread::sleep(std::time::Duration::from_secs(6));
-        }
-
-        self.set_raw_mode();
-
-    }
-
-}
 
 

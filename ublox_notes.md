@@ -2,6 +2,10 @@
 
 A lot of this was pulled from [here](https://gpsd.io/ubxtool-examples.html).
 
+The manual with the configuration options is [here](https://content.u-blox.com/sites/default/files/ZED-F9P-04B_DataSheet_UBX-21044850.pdf).
+
+The interface manual is [here](https://content.u-blox.com/sites/default/files/documents/u-blox-F9-HPG-1.32_InterfaceDescription_UBX-22008968.pdf).
+
 I had to build from scratch to get PPP reprocessing and gpsfake to run correctly. The current (Feb 2022) Ubuntu package is version 3.20, and has RINEX and gps pipe bugs. The latest 3.23.1 version works.
 
 First, plug in the GPS and start the docker gps_server (or GPSD if running it directly).
@@ -143,3 +147,13 @@ gpsrinex -i 30 -n 1000000 :3000
 
 gpsprof | gnuplot --persist
 gpsprof -f polar | gnuplot --persist
+
+## Setting the reciever to accept RTCM messages on the input port
+
+Use the second serial interface to accept RTCM messages. You can pipe messages to this port from an NTRIP server using RTKLib's str2str command, for instance:
+
+'''
+ubxtool -z CFG-UART2-BAUDRATE,115200
+ubxtool -z CFG-UART2-ENABLED,1
+ubxtool -z CFG-UART2INPROT-RTCM3X,1
+'''

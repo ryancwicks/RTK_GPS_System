@@ -1,0 +1,3 @@
+[submodule "RTKLib"]
+	path = RTKLib
+	url = git@github.com:ryancwicks/RTKLIB.git

@@ -19,6 +19,13 @@ services:
     tty: true
     depends_on: 
       - "time_server"
+    network_mode: host
+  ntrip_server:
+    build: ./NTRIPServer
+    ports:
+      - 2101:2101
+      - 2102:2102
+    tty: true
 
 volumes:
   shared_var:
