@@ -19,9 +19,9 @@ struct RTKClientConfig {
     port: u16,
 }
 
-#[post("/start_rtk")]
-async fn start_rtk(data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>, info: web::Json<RTKClientConfig>) -> impl Responder {
-    log::info!("Starting RTK input mode .");
+#[post("/start")]
+async fn start(data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>, info: web::Json<RTKClientConfig>) -> impl Responder {
+    log::info!("Starting the GPS system.");
     let gps_control = &data.get_ref().1;
     
     let rtcm_mode = GPSMode::RtcmIn(info.username.clone(), info.password.clone(), info.server.clone(), info.mount_point.clone(), info.port);
@@ -34,6 +34,16 @@ async fn start_rtk(data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)
             HttpResponse::InternalServerError()
         }
     }
+}
+
+#[get("/settings")]
+async fn get_settings(data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>, info: web::Json<RTKClientConfig>) -> impl Responder {
+
+}
+
+#[post("/settings")]
+async fn set_settings(data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>, info: web::Json<RTKClientConfig>) -> impl Responder {
+
 }
 
 #[get("/shutdown")]
