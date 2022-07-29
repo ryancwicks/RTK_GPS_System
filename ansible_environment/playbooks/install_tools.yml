@@ -23,4 +23,6 @@
     - name: Setup the hostname
       command: echo {{ ansible_hostname }} > /etc/hostname
 
+    - name: Install rust toolchain.
+
 
