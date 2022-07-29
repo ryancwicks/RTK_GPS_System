@@ -4,15 +4,15 @@
   become: yes
 
   tasks:
-    - name: Update apt packages
-      apt:
-        update_cache: "yes"
-        force_apt_get: "yes"
+    # - name: Update apt packages
+    #   apt:
+    #     update_cache: "yes"
+    #     force_apt_get: "yes"
 
-    - name: Install gpsd package
-      apt:
-        pkg:
-        - gpsd
+    # - name: Install gpsd package
+    #   apt:
+    #     pkg:
+    #     - gpsd
       
     - name: Unarchive the program
       ansible.builtin.unarchive:

@@ -1,17 +1,22 @@
 ---
-
 - import_playbook: disable_bluetooth_add_serial.yml
 
 - import_playbook: disable_serial_console.yml
 
 - import_playbook: setup_pps_hardware.yml
 
-- import_playbook: install_docker.yml
-
 - import_playbook: install_log2ram.yml
+
+- import_playbok: install_tools.yml
+
+- import_playbook: setup_chrony.yml
 
 - import_playbook: setup_gpsd.yml
 
-- import_playbook: setup_chrony.yml
+- import_playbook: install_hotspot.yml
+
+- import_playbook: setup_rtklib.yml
+
+- import_playbok: cleanup_apt.yml
 
 ...

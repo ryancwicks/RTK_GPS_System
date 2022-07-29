@@ -15,4 +15,12 @@
         - vim
         - rsync
         - gpsd-clients
+        - python3
+        - git
+        - build-essential
+        - scons
+
+    - name: Setup the hostname
+      command: echo {{ ansible_hostname }} > /etc/hostname
+
 

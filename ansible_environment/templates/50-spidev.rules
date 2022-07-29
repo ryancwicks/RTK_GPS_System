@@ -1,2 +1,0 @@
-# Allow spi access for users in the spi group.
-SUBSYSTEM=="spidev", GROUP="spi", MODE="0660"

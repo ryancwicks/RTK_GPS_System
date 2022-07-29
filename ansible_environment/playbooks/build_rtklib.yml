@@ -1,0 +1,17 @@
+---
+- name: Build RTKLib
+  hosts: all
+  become: yes
+
+  tasks:
+  - name: Check for existing install.
+    
+  - name: If not installed, download and build the str2str tool from RTKlib.
+    command: |
+      cd /tmp
+      git clone https://github.com/ryancwicks/RTKLIB.git 
+      cd RTKLIB/app/str2str/gcc 
+      sed '/^CFLAGS/ s/$/ -std=gnu99/' makefile > Makefile 
+      rm makefile 
+      make 
+      cp str2str /usr/bin

@@ -1,0 +1,79 @@
+---
+- name: Setup the the device as a base station
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Update apt packages
+      apt:
+        update_cache: "yes"
+        force_apt_get: "yes"
+    
+    - name: Install the needed tools
+      apt:
+        - dnsmasq
+        - hostapd
+
+    - name: stop the existing processes for setup.
+     ansible.builtin.systemd:
+      state: stop
+      name: 
+        - dnsmasq
+        - hostapd
+
+    - name: Turn of wifi power saving.
+      lineinfile: 
+        path: /etc/NetworkManager/conf.d/default-wifi-powersave-on.conf
+        regexp: '^(.*)wifi.powersave(.*)$' 
+        line: 'wifi.powersave = 2'
+        backrefs: yes
+    
+    - name: Copy AP network rules
+      ansible.builtin.template:
+        src: ../templates/02-ap_wireless.conf
+        dest: /etc/network/interfaces.d/02-ap_wireless.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy udev rules for the AP
+      ansible.builtin.template:
+        src: ../templates/90-wireless.rules
+        dest: /etc/udev/rules.d/90-wireless.rules
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy AP dhcpd configuration
+      ansible.builtin.template:
+        src: ../templates/dhcpcd.conf
+        dest: /etc/dhcpcd.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy AP dnsmasq configuration
+      ansible.builtin.template:
+        src: ../templates/dnsmasq.conf
+        dest: /etc/dnsmasq.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy AP hostapd configuration
+      ansible.builtin.template:
+        src: ../templates/hostapd.conf
+        dest: /etc/hostapd/hostapd.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Copy AP defaults hostapd configuration
+      command: 'echo DAEMON_CONF="/etc/hostapd/hostapd.conf" > /etc/defaults/hostapd' 
+    
+    - name: stop the existing processes for setup.
+      ansible.builtin.systemd:
+        state: restart
+        name: 
+          - dnsmasq
+          - hostapd

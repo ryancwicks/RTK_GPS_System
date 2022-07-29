@@ -10,4 +10,6 @@ Use the Raspberry Pi installer to set up the pi user. I used the 64 bit Lite ins
 
 ### Raspberry Pi Setup
 
-Connect the PPS pin to GPIO4/Pin 7 on the Raspberry Pi 40 pin header, and the ground pin to pin 9. 
+Most of this is already handled by ansible. 
+
+

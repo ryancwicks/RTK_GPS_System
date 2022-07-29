@@ -1,5 +1,5 @@
 ---
-- name: Touch Test Playbook
+- name: Cleanup the apt repository caches
   hosts: all
 
   tasks:
