@@ -11,20 +11,21 @@
     
     - name: Install the needed tools
       apt:
-        - vsftp
+        pkg:
+        - vsftpd
 
     - name: Copy over the vsftp configuration file
-      ansible.builtin.template:
+      ansible.builtin.copy:
         src: ../templates/vsftpd.conf
         dest: /etc/vsftpd.conf
-        user: root
-        groups: root
+        owner: root
+        group: root
         mode: '0644'
 
     - name: Setup the data directory. 
-      command: |
-        mkdir -f /data
-        mkdir -f /data/data
+      shell: |
+        mkdir /data
+        mkdir /data/data
         chmod a-w /data
         chmod 777 /data/data
 

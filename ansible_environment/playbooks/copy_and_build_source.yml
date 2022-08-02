@@ -1,0 +1,34 @@
+---
+- name: Copy the gpsd, chronyd and gps_control containers definitions and code to the raspberry pi and build.
+  hosts: all
+
+  tasks:
+  - name: Copy over the appropriate container definitions and files.
+    ansible.posix.synchronize:
+      src: /tmp/ansible/project_files/gps_control/
+      dest: /home/pi/gps_control
+      rsync_opts:
+        - "--no-motd"
+        - "--exclude=.git*"
+        - "--exclude=ansible_environment"
+        - "--exclude=arduino_firmware"
+        - "--exclude=docs"
+        - "--exclude=LORAArduinoCode"
+        - "--exclude=*.md"
+        - "--exclude=LICENSE"
+        - "--exclude=target"
+        - "--exclude=GPSServer"
+        - "--exclude=ChronyServer"
+        - "--exclude=Cargo.lock"
+  
+  - name: Build the project
+    shell: |
+      [ -f ~/.cargo/env ] && source $HOME/.cargo/env
+      cargo build --release
+    args:
+      chdir: /home/pi/gps_control
+      executable: /bin/bash
+      
+  #- name: Build the docker containers
+  #  community.docker.docker_compose:
+  #    project_src: /home/pi/project_files

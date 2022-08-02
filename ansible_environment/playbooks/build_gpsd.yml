@@ -1,7 +1,6 @@
 ---
 - name: Setup the GPSD process
   hosts: all
-  become: yes
 
   tasks:
     # - name: Update apt packages
@@ -13,7 +12,17 @@
     #   apt:
     #     pkg:
     #     - gpsd
-      
+    - name: Install prerequisites
+      become: yes
+      apt:
+        pkg:
+        - libncurses-dev
+
+    - name: Install python prerequisites
+      ansible.builtin.pip:
+       name:
+       - pyserial
+
     - name: Unarchive the program
       ansible.builtin.unarchive:
         src: http://download-mirror.savannah.gnu.org/releases/gpsd/gpsd-3.23.1.tar.gz
@@ -21,22 +30,31 @@
         remote_src: true
     
     - name: Build GPSD
-      console: scons
+      shell: scons
       args:
         chdir: /tmp/gpsd-3.23.1
 
     - name: Install GPSD
-      console: scons udev-install
+      become: yes
+      shell: scons udev-install
       args:
         chdir: /tmp/gpsd-3.23.1
         
+    - name: Copy over the GPSD python path tools export script
+      become: yes
+      copy: 
+        src: ../templates/gpstools-path.sh
+        dest: /etc/profile.d/gpstools-path.sh
+        mode: '0755'
 
     - name: Copy over GPSD config file
+      become: yes
       copy:
         src: ../templates/gpsd.conf
         dest: /etc/default/gpsd
 
     - name: Set GPSD to run on startup
+      become: yes
       ansible.builtin.systemd:
         state: restarted
         daemon_reload: yes

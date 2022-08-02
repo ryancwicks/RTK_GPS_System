@@ -1,0 +1,10 @@
+---
+- name: Build RTKLib
+  hosts: all
+  become: yes
+
+  tasks:
+  - name: Copy the appropriate startup script to /etc/systemd/system
+
+  - name: Enable to startup script.
+  

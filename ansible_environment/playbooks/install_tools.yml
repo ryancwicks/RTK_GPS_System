@@ -1,28 +1,58 @@
 ---
 - name: Install general software
   hosts: all
-  become: yes
 
   tasks:
     - name: Update apt packages
+      become: yes
       apt:
         update_cache: "yes"
         force_apt_get: "yes"
 
     - name: Install packages with apt
+      become: yes
       apt:
         pkg:
         - vim
         - rsync
-        - gpsd-clients
         - python3
+        - python3-pip
         - git
         - build-essential
         - scons
+    
+    - name: Add user to dialout group.
+      become: yes
+      user:
+        name: pi
+        groups: dialout
+        append: yes
 
-    - name: Setup the hostname
-      command: echo {{ ansible_hostname }} > /etc/hostname
+    - name: check if cargo is installed
+      shell: command -v cargo
+      register: cargo_exists
+      ignore_errors: yes
 
-    - name: Install rust toolchain.
+    - name: Download Installer
+      when: cargo_exists is failed
+      get_url:
+        url: https://sh.rustup.rs
+        dest: /tmp/sh.rustup.rs
+        mode: '0755'
+        force: 'yes'
+      tags:
+        - rust
+    
+    - name: install rust/cargo
+      when: cargo_exists is failed
+      shell: /tmp/sh.rustup.rs -y
+      tags:
+        - rust
 
-
+    - name: add cargo and rustup to the path
+      when: cargo_exists is failed
+      lineinfile:
+        dest: /home/pi/.bashrc
+        line: |
+          # Add cargo and rustup to the system path
+          [ -f ~/.cargo/env ] && source $HOME/.cargo/env

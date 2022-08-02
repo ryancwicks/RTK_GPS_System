@@ -4,10 +4,14 @@
   become: yes
 
   tasks:
-  - name: Check for existing install.
-    
+  - name: Check for existing str2str install.
+    shell: command -v str2str
+    register: str2str_exists
+    ignore_errors: yes
+
   - name: If not installed, download and build the str2str tool from RTKlib.
-    command: |
+    when: str2str_exists is failed
+    shell: |
       cd /tmp
       git clone https://github.com/ryancwicks/RTKLIB.git 
       cd RTKLIB/app/str2str/gcc 

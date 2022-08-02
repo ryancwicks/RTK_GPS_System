@@ -25,8 +25,7 @@ async fn main() -> std::io::Result<()> {
     let cli = Cli::parse();
 
     //Setup the settings handler
-    let settings_handler = SettingsHandler::new(cli.mode.clone());
-    settings_handler.start();
+    let settings_handler = SettingsHandler::new(cli.mode.clone()).start();
 
     //Setup the serial port redirector
     let input_serial_port = InputSocket::Serial {port_name: cli.gps_tty_port, baudrate: Some(115200), rd: None, tx: None};
@@ -75,7 +74,7 @@ async fn main() -> std::io::Result<()> {
     use actix_web::{middleware, web, App, HttpServer};
     HttpServer::new(move || {
         App::new()
-            .app_data(actix_web::web::Data::new((socket_monitor.clone(), gps_control.clone())))
+            .app_data(actix_web::web::Data::new((socket_monitor.clone(), gps_control.clone(), settings_handler.clone())))
             // enable logger
             .wrap(middleware::Logger::default())
             // serve static files

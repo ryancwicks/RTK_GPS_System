@@ -3,7 +3,10 @@ use actix_files::NamedFile;
 use serde::Deserialize;
 use crate::gps_interface::gps_control::{GPSControl, GPSMode};
 use crate::web_socket::GPSWebSocketMonitor;
+use crate::settings::{Modes, SettingsMessage, SettingsHandler};
 use actix::prelude::*;
+
+type WebData = web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>, Addr<SettingsHandler>)>;
 
 pub async fn index() -> Result<NamedFile, Error> {
     let file = NamedFile::open_async("./static/index.html").await?;
@@ -20,7 +23,7 @@ struct RTKClientConfig {
 }
 
 #[post("/start")]
-async fn start(data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>, info: web::Json<RTKClientConfig>) -> impl Responder {
+async fn start(data: WebData, info: web::Json<RTKClientConfig>) -> impl Responder {
     log::info!("Starting the GPS system.");
     let gps_control = &data.get_ref().1;
     
@@ -37,17 +40,34 @@ async fn start(data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>, i
 }
 
 #[get("/settings")]
-async fn get_settings(data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>, info: web::Json<RTKClientConfig>) -> impl Responder {
+async fn get_settings(data: WebData) -> impl Responder { 
+    log::info!("Handling get settings api command.");
+    let settings_manager = &data.get_ref().2;
 
+    let message = SettingsMessage::GetSettings();
+    let settings_return_future = settings_manager.send(message).await;
+
+    let settings_return = settings_return_future.expect("Failed to get settings from settings manager");
+    web::Json(settings_return.expect("Received settings error from settings manager."))
 }
 
 #[post("/settings")]
-async fn set_settings(data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>, info: web::Json<RTKClientConfig>) -> impl Responder {
+async fn set_settings(data: WebData, info: web::Json<Modes>) -> impl Responder {
+    log::info!("Handling set settings api command");
+    let settings_manager = &data.get_ref().2;
+    let settings = info.0;
 
+    let message = SettingsMessage::SetSettings(settings);
+    let settings_return_future = settings_manager.send(message).await;
+
+    let settings_return = settings_return_future.expect("Failed to set settings in settings manager.");
+    settings_return.expect("Received setting erro from settings manager.");
+    
+    HttpResponse::Ok().finish()
 }
 
 #[get("/shutdown")]
-pub async fn shutdown(data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>) -> Result<HttpResponse, Error> {//(processor: web::Data<Addr<Processor>>) -> Result<HttpResponse, Error> {
+pub async fn shutdown(data: WebData) -> Result<HttpResponse, Error> {//(processor: web::Data<Addr<Processor>>) -> Result<HttpResponse, Error> {
     //processor.do_send(SetState::Shutdown);
     log::info!("Shutting down the server.");
     tokio::spawn( async move {

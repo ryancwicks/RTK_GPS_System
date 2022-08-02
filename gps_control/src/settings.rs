@@ -2,6 +2,7 @@ use std::error::Error;
 
 use clap::{Parser, Subcommand};
 use actix::prelude::*;
+use serde::{Serialize, Deserialize};
 
 
 /// This structure are the command line parameters passed to the system from the command line.
@@ -30,7 +31,7 @@ pub struct Cli {
     pub gps_usb_port: String,
 
     /// Secondary GPS serial port
-    #[clap(default_value = "/dev/ttyUSB00", long)]
+    #[clap(default_value = "/dev/ttyS0", long)]
     pub gps_tty_port: String,
 
     /// Default web port
@@ -43,7 +44,7 @@ pub struct Cli {
 }
 
 /// These are the settings associated with the various sub modes.
-#[derive(Subcommand, Clone)]
+#[derive(Subcommand, Clone, Serialize, Deserialize)]
 pub enum Modes {
     /// Set the system into RTK rover
     RTKRover {

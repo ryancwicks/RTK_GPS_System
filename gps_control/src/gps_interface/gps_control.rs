@@ -35,7 +35,6 @@ pub struct GPSControl {
     port: u16,
     gpsd_command: Option<std::process::Child>,
     ntrip_command: Option<std::process::Child>,
-    nmea_publish_command: Option<std::process::Child>,
     rinex_collection_command: Option<std::process::Child>,
     gps_usb_port: String,
     io_port: u16,
@@ -82,7 +81,6 @@ impl GPSControl {
             port: port,
             gpsd_command: None,
             ntrip_command: None,
-            nmea_publish_command: None,
             rinex_collection_command: None,
             gps_usb_port: gps_usb_port,
             io_port: io_port
@@ -93,12 +91,9 @@ impl GPSControl {
     ///  - filename: filename to save the rinex observations to.
     ///  - interval_in_s: number of seconds to wait between collections.
     ///  - duration_in_min: number of minutes to collect data for.
-    fn set_raw_mode(&self, filename: &str, interval_in_s: u32, number_of_collections: u32) {
-
+    fn set_raw_mode(&mut self, filename: &str, interval_in_s: u32, number_of_collections: u32) { 
         log::info!("Setting GPS into raw binary mode.");
-        let _output = Command::new ("gpsctl").arg("-s").arg(GPS_BAUDRATE).output().expect("Failed to execute gpsctl.");
-        log::info!("Baudrate set to {}.", GPS_BAUDRATE)
-;            
+
         let ubx_commands = vec![
                             ("-p", "RESET"),
                             ("-d", "NMEA"),
@@ -129,10 +124,8 @@ impl GPSControl {
 
     /// Set the rover into base station mode, enabling appropriate RTCM outputs and position modes.
     /// This is then followed by setting up the str2str process to stream those rtcm corrections.
-    fn set_base_station_mode(&self, username: &str, password: &str, server: &str, mount_point: &str, port: u16) {
+    fn set_base_station_mode(&mut self, username: &str, password: &str, server: &str, mount_point: &str, port: u16) {
         log::info!("Setting the GPS into base station mode and setting the serial port TX to output RTCM messages.");
-        let _output = Command::new ("gpsctl").arg("-s").arg(GPS_BAUDRATE).output().expect("Failed to execute gpsctl.");
-        log::info!("Baudrate set to {}.", GPS_BAUDRATE);
 
         let ubx_commands = vec![
                             ("-p", "RESET"),
@@ -145,10 +138,26 @@ impl GPSControl {
                             ("-e", "GPS"),
                             ("-d", "RAWX"),
                             ("-z", "CFG-NMEA-HIGHPREC,1"),
+                            ("-z", "CFG-UART2-ENABLED,1"),
+                            ("-z", "CFG-UART2-BAUDRATE,115200"),
                             ("-z", "CFG-NAVSPG-DYNMODEL,2"), //Stationary mode
-                            //("-z", "CFG-MSGOUT-UBX_RXM_RAWX_USB,1")
+                            ("-z", "CFG-UART2OUTPROT-NMEA,0"),
+                            ("-z", "CFG-UART2OUTPROT-RTCM3X,1"),
                         ];
         GPSControl::run_ubx_commands(ubx_commands);
+
+        log::info!("Starting the ntrip caster.");
+        let address_out = "ntrip://".to_string()+username+":"+password+"@"+server+":"+&port.to_string()+"/"+&mount_point.to_string();
+        let address_in = "tcpcli://127.0.0.1:".to_string()+&self.io_port.to_string();
+
+        log::info! ("Command: str2str -in {} -out {}", address_in, address_out);
+
+        //Kill the current runner before restarting, if running.
+        if let Some(mut cmd) = self.ntrip_command.take() {
+            cmd.kill().expect("str2str couldn't be killed!");
+        };
+
+        self.ntrip_command = Some(Command::new ("str2str").arg("-in").arg(address_in).arg("-out").arg(address_out).spawn().expect("Failed to execute str2str."));
     }
 
     /// Start the RTCM streaming to the local redirect server from the given NTRIP address.
@@ -168,8 +177,6 @@ impl GPSControl {
         self.ntrip_command = Some(Command::new ("str2str").arg("-in").arg(address_in).arg("-out").arg(address_out).spawn().expect("Failed to execute str2str."));
         
         let ubx_commands = vec![
-                            ("-z", "CFG-UART2-ENABLED,1"),
-                            ("-z", "CFG-UART2-BAUDRATE,115200"), //ship mode
                             ("-z", "CFG-UART2INPROT-RTCM3X,1")
                         ];
         GPSControl::run_ubx_commands(ubx_commands);
@@ -177,8 +184,6 @@ impl GPSControl {
 
     fn set_rover_mode(&self) {
         log::info!("Setting the GPS into rover mode, and the serial TX to send out NMEA data.");
-        let _output = Command::new ("gpsctl").arg("-s").arg(GPS_BAUDRATE).output().expect("Failed to execute gpsctl.");
-        log::info!("Baudrate set to {}.", GPS_BAUDRATE);
 
         let ubx_commands = vec![
                             ("-p", "RESET"),
@@ -194,7 +199,8 @@ impl GPSControl {
                             ("-z", "CFG-NAVSPG-DYNMODEL,0"), //ship mode
                             ("-z", "CFG-UART2-ENABLED,1"),
                             ("-z", "CFG-UART2-BAUDRATE,115200"),
-                            ("-z", "CFG-UART2OUTPROT-NMEA,1")
+                            ("-z", "CFG-UART2OUTPROT-NMEA,1"),
+                            ("-z", "CFG-UART2OUTPROT-RTCM3X,0")
                             //("-z", "CFG-MSGOUT-UBX_RXM_RAWX_USB,1")
                         ];
         GPSControl::run_ubx_commands(ubx_commands);
@@ -228,6 +234,8 @@ impl Actor for GPSControl {
                                 .spawn()
                                 .expect("The GPSD daemon failed to start."));
             std::thread::sleep(std::time::Duration::from_secs(6));
+            let _output = Command::new ("gpsctl").arg("-s").arg(GPS_BAUDRATE).output().expect("Failed to execute gpsctl.");
+            log::info!("Baudrate set to {}.", GPS_BAUDRATE);
         }
 
         self.set_rover_mode();

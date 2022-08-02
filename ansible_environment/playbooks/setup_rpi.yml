@@ -13,10 +13,14 @@
 
 - import_playbook: build_gpsd.yml
 
-- import_playbook: install_hotspot.yml
-
 - import_playbook: build_rtklib.yml
 
-- import_playbok: cleanup_apt.yml
+- import_playbook: setup_anonymous_ftp.yml
+
+- import_playbook: copy_and_build_source.yml
+
+- import_playbook: configure_startup.yml
+
+#- import_playbook: install_hotspot.yml
 
 ...
