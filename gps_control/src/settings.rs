@@ -31,7 +31,7 @@ pub struct Cli {
     pub gps_usb_port: String,
 
     /// Secondary GPS serial port
-    #[clap(default_value = "/dev/ttyS0", long)]
+    #[clap(default_value = "/dev/ttyAMA0", long)]
     pub gps_tty_port: String,
 
     /// Default web port
@@ -88,10 +88,39 @@ pub enum Modes {
 
         /// NTRIP server port
         #[clap(default_value_t = 2101, long)]
-        port: u16
+        port: u16,
+
+        /// Survey In Dwell time in s
+        #[clap(default_value_t = 7200, long)]
+        survey_dwell_time: u32,
+
+        /// Survey In Position Accuracy in 0.1 mm
+        #[clap(default_value_t = 15000, long)]
+        survey_position_accuracy: u32,
+
+        /// ECEF X position in cm for fixed mode
+        #[clap(long)]
+        fixed_ECEF_x: Option<f64>,
+
+        /// ECEF Y position in cm for fixed mode
+        #[clap(long)]
+        fixed_ECEF_y: Option<f64>,
+
+        /// ECEF Z position in cm for fixed mode
+        #[clap(long)]
+        fixed_ECEF_z: Option<f64>,
+
+        /// ECEF accuracy in cm for fixed mode
+        #[clap(long)]
+        fixed_ECEF_accuracy: Option<f64>,
     },
     /// Set the system into post processing raw capture mode
     PPPMode {
+        
+        /// Data storage directory.
+        #[clap(default_value = "/data/data", long)]
+        data_directory: String,
+
         /// RINEX file output
         #[clap(default_value = "raw_data.obs", long)]
         filename: String,

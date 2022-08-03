@@ -1,0 +1,16 @@
+# /etc/systemd/system/rtk_base.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment="NTRIP_USERNAME="
+Environment="NTRIP_SERVER="
+Environment="NTRIP_MOUNT_POINT="
+Environment="NTRIP_PASSWORD="
+Environment="ECEF_X=0.0"
+Environment="ECEF_Y=0.0"
+Environment="ECEF_Z=0.0"
+Environment="ECEF_ACC=1.0"
+ExecStart=/home/pi/gps_control/startup_scripts/rtk_base.sh
+
+[Install]
+WantedBy=multi-user.target

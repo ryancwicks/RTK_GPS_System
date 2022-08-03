@@ -12,4 +12,15 @@ Use the Raspberry Pi installer to set up the pi user. I used the 64 bit Lite ins
 
 Most of this is already handled by ansible. 
 
+## Setting up the program to start automatically.
+
+Edit the appropriate .service under the gps_control/startup_scripts and add the appropriate environment variables.
+
+Copy the appropriate .service loop script into the /etc/systemd/system directory.
+
+```
+sudo systemctl enable <loop service>
+suod systemctl start <loop service>
+```
+
 

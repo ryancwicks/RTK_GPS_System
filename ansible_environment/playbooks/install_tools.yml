@@ -25,7 +25,9 @@
       become: yes
       user:
         name: pi
-        groups: dialout
+        groups: 
+        - dialout
+        - tty
         append: yes
 
     - name: check if cargo is installed

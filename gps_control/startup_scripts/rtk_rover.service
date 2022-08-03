@@ -1,0 +1,11 @@
+# /etc/systemd/system/rtk_rover.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment="NTRIP_USERNAME="
+Environment="NTRIP_SERVER="
+Environment="NTRIP_MOUNT_POINT="
+ExecStart=/home/pi/gps_control/startup_scripts/rtk_rover.sh
+
+[Install]
+WantedBy=multi-user.target

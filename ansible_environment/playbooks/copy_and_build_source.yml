@@ -21,13 +21,13 @@
         - "--exclude=ChronyServer"
         - "--exclude=Cargo.lock"
   
-  - name: Build the project
-    shell: |
-      [ -f ~/.cargo/env ] && source $HOME/.cargo/env
-      cargo build --release
-    args:
-      chdir: /home/pi/gps_control
-      executable: /bin/bash
+  #- name: Build the project
+  #  shell: |
+  #    [ -f ~/.cargo/env ] && source $HOME/.cargo/env
+  #    cargo build --release
+  #  args:
+  #    chdir: /home/pi/gps_control
+  #    executable: /bin/bash
       
   #- name: Build the docker containers
   #  community.docker.docker_compose:

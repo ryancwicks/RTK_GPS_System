@@ -9,6 +9,7 @@ use std::collections::HashMap;
 
 use crate::gps_interface::gps_control::GPSControl;
 use crate::gps_interface::gps_interface::GPSData;
+use crate::settings::SettingsHandler;
 
 /// How often heartbeat pings are sent
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
@@ -41,8 +42,8 @@ pub struct GPSEvent {
 
 
 /// do websocket handshake and start `MyWebSocket` actor
-pub async fn ws_index(r: HttpRequest, stream: web::Payload, data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>)>,) -> Result<HttpResponse, Error> {
-    log::info!("{:?}", r);
+pub async fn ws_index(r: HttpRequest, stream: web::Payload, data: web::Data<(Addr<GPSWebSocketMonitor>, Addr<GPSControl>, Addr<SettingsHandler>)>,) -> Result<HttpResponse, Error> {
+    log::info!("Performing web socket handshake: {:?}", r);
     let uuid = Uuid::new_v4();
     let (addr, res) = ws::WsResponseBuilder::new(GPSWebSocket::new(&uuid, &data.get_ref().0), &r, stream).start_with_addr()?;
 

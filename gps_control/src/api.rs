@@ -61,7 +61,7 @@ async fn set_settings(data: WebData, info: web::Json<Modes>) -> impl Responder {
     let settings_return_future = settings_manager.send(message).await;
 
     let settings_return = settings_return_future.expect("Failed to set settings in settings manager.");
-    settings_return.expect("Received setting erro from settings manager.");
+    settings_return.expect("Received setting erro from settings");
     
     HttpResponse::Ok().finish()
 }

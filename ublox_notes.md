@@ -157,3 +157,31 @@ ubxtool -z CFG-UART2-BAUDRATE,115200
 ubxtool -z CFG-UART2-ENABLED,1
 ubxtool -z CFG-UART2INPROT-RTCM3X,1
 '''
+
+## Survey in mode:
+
+TMODE3 needs to be set to use the base station mode. If you use survey in, it will dwell, and the error will drop over time. If set to fixed, it will need the ECEF or LatLonHeight placed in memory.
+
+
+
+Set survey in mode:
+
+```
+ubxtool -z CFG-TMODE-MODE,1
+ubxtool -z CFG-TMODE-SVIN_MIN_DUR,7200 //seconds to run.
+ubxtool -z CFG-TMODE-SVIN_ACC_LIMIT,25000 //accuracy to reach in 0.1mm
+```
+
+For fixed mode (ECEF co-ords):
+
+```
+ubxtool -z CFG-TMODE-MODE,2
+ubxtool -z CFG-TMODE-POS_TYPE,0
+ubxtool -z CFG-TMODE-ECEF_X,<X position in cm>
+ubxtool -z CFG-TMODE-ECEF_X_HP,<X high precision in in 0.1mm (-99 to 99)>
+ubxtool -z CFG-TMODE-ECEF_Y,<Y position in cm>
+ubxtool -z CFG-TMODE-ECEF_Y_HP,<Y high precision in in 0.1mm (-99 to 99)>
+ubxtool -z CFG-TMODE-ECEF_Z,<Z position in cm>
+ubxtool -z CFG-TMODE-ECEF_Z_HP,<Z high precision in in 0.1mm (-99 to 99)>
+ubxtool -z CFG-TMODE-FIXED_POS_ACC,<Accuracy in 0.1 mm>
+```

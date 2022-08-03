@@ -53,12 +53,12 @@
         src: ../templates/gpsd.conf
         dest: /etc/default/gpsd
 
-    - name: Set GPSD to run on startup
-      become: yes
-      ansible.builtin.systemd:
-        state: restarted
-        daemon_reload: yes
-        name: gpsd
+    #- name: Set GPSD to run on startup
+    #  become: yes
+    #  ansible.builtin.systemd:
+    #    state: restarted
+    #    daemon_reload: yes
+    #    name: gpsd
 
 
     
