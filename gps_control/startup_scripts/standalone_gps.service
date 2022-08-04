@@ -1,0 +1,8 @@
+# /etc/systemd/system/standalone_gps.service
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/home/pi/gps_control/startup_scripts/standalone_gps.sh
+
+[Install]
+WantedBy=multi-user.target

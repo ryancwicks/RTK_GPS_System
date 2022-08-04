@@ -98,21 +98,21 @@ pub enum Modes {
         #[clap(default_value_t = 15000, long)]
         survey_position_accuracy: u32,
 
-        /// ECEF X position in cm for fixed mode
+        /// ecef X position in cm for fixed mode
         #[clap(long)]
-        fixed_ECEF_x: Option<f64>,
+        fixed_ecef_x: Option<f64>,
 
-        /// ECEF Y position in cm for fixed mode
+        /// ecef Y position in cm for fixed mode
         #[clap(long)]
-        fixed_ECEF_y: Option<f64>,
+        fixed_ecef_y: Option<f64>,
 
-        /// ECEF Z position in cm for fixed mode
+        /// ecef Z position in cm for fixed mode
         #[clap(long)]
-        fixed_ECEF_z: Option<f64>,
+        fixed_ecef_z: Option<f64>,
 
-        /// ECEF accuracy in cm for fixed mode
+        /// ecef accuracy in cm for fixed mode
         #[clap(long)]
-        fixed_ECEF_accuracy: Option<f64>,
+        fixed_ecef_accuracy: Option<f64>,
     },
     /// Set the system into post processing raw capture mode
     PPPMode {
@@ -200,20 +200,27 @@ impl Handler<SettingsMessage> for SettingsHandler {
                 }
 
                 match settings {
-                    Modes::PPPMode{filename, interval, number_of_collections} => {
+                    Modes::PPPMode{data_directory, filename, interval, number_of_collections} => {
                         //todo validate the inputs.
-                        self.settings = Modes::PPPMode { filename: filename,
+                        self.settings = Modes::PPPMode { data_directory: data_directory,
+                                                         filename: filename,
                                                          interval: interval,
                                                          number_of_collections: number_of_collections };
                     },
-                    Modes::RTKBase{username, password, server, mount_point, port} => {
+                    Modes::RTKBase{username, password, server, mount_point, port, survey_dwell_time, survey_position_accuracy, fixed_ecef_x, fixed_ecef_y, fixed_ecef_z, fixed_ecef_accuracy} => {
                         //todo validate the inputs
                         self.settings = Modes::RTKBase {
                             username: username,
                             password: password,
                             server: server,
                             mount_point: mount_point,
-                            port: port
+                            port: port,
+                            survey_dwell_time: survey_dwell_time,
+                            survey_position_accuracy: survey_position_accuracy,
+                            fixed_ecef_x: fixed_ecef_x,
+                            fixed_ecef_y: fixed_ecef_y,
+                            fixed_ecef_z: fixed_ecef_z,
+                            fixed_ecef_accuracy: fixed_ecef_accuracy,
                         };
                     },
                     Modes::RTKRover{username, password, server, mount_point, port} => {

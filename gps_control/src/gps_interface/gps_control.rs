@@ -21,9 +21,9 @@ pub const GPS_DATA_DIR: &str= "data/";
 #[derive(Message, Debug)]
 #[rtype(result="Result<(), Box<dyn std::error::Error + Send + Sync>>")]
 pub enum GPSMode {
-    Base(String /*username*/, String/*password*/, String/*server*/, String/*mount_point*/, u16/*port*/),
+    Base(String /*username*/, String/*password*/, String/*server*/, String/*mount_point*/, u16/*port*/, u32 /*survey_dwell_time*/, u32/*survey_position_accuracy*/, Option<f64>/*fixed_ecef_x*/, Option<f64>/*fixed_ecef_y*/, Option<f64>/*fixed_ecef_z*/, Option<f64>/*fixed_ecef_accuracy*/),
     Standalone,
-    RAW (String /*filename*/, u32 /*interval*/, u32 /*number_of_collections*/),
+    RAW (String /*data_directory*/,  String /*filename*/, u32 /*interval*/, u32 /*number_of_collections*/),
     RtcmIn(String /*username*/, String/*password*/, String/*server*/, String/*mount_point*/, u16/*port*/),
     Stopped,
 }
@@ -88,10 +88,11 @@ impl GPSControl {
     }
 
     ///Start collecting data in raw mode, saving the ubx data to a file.
+    ///  - data_directory: directory to save the data to.
     ///  - filename: filename to save the rinex observations to.
     ///  - interval_in_s: number of seconds to wait between collections.
     ///  - duration_in_min: number of minutes to collect data for.
-    fn set_raw_mode(&mut self, filename: &str, interval_in_s: u32, number_of_collections: u32) { 
+    fn set_raw_mode(&mut self, data_directory: &str, filename: &str, interval_in_s: u32, number_of_collections: u32) { 
         log::info!("Setting GPS into raw binary mode.");
 
         let ubx_commands = vec![
@@ -113,7 +114,7 @@ impl GPSControl {
             cmd.kill().expect("gpsrinex couldn't be killed!");
         };
 
-        
+        let filename = std::path::Path::new(data_directory).join(filename);
         self.rinex_collection_command = Some(Command::new ("gpsrinex")
                                 .arg("-i").arg(interval_in_s.to_string())
                                 .arg("-n").arg(number_of_collections.to_string())
@@ -124,7 +125,9 @@ impl GPSControl {
 
     /// Set the rover into base station mode, enabling appropriate RTCM outputs and position modes.
     /// This is then followed by setting up the str2str process to stream those rtcm corrections.
-    fn set_base_station_mode(&mut self, username: &str, password: &str, server: &str, mount_point: &str, port: u16) {
+    fn set_base_station_mode(&mut self, username: &str, password: &str, server: &str, mount_point: &str, port: u16,
+                             survey_dwell_time: u32, survey_position_accuracy: u32, 
+                             fixed_ecef_x: Option<f64>, fixed_ecef_y: Option<f64>, fixed_ecef_z: Option<f64>, fixed_ecef_accuracy: Option<f64>) {
         log::info!("Setting the GPS into base station mode and setting the serial port TX to output RTCM messages.");
 
         let ubx_commands = vec![
@@ -145,6 +148,50 @@ impl GPSControl {
                             ("-z", "CFG-UART2OUTPROT-RTCM3X,1"),
                         ];
         GPSControl::run_ubx_commands(ubx_commands);
+
+        if fixed_ecef_x != None && fixed_ecef_y != None && fixed_ecef_z != None && fixed_ecef_accuracy != None {
+            let split_position = |val: f64| -> (i64, i64) {
+                let std_precision: i64 = val.floor() as i64;
+                let high_precision: i64 = ((val - val.floor()) * 100.0).floor() as i64;
+                (std_precision, high_precision)
+            };
+            
+            let (ecef_x_sp, ecef_x_hp) = split_position(fixed_ecef_x.unwrap());
+            let (ecef_y_sp, ecef_y_hp) = split_position(fixed_ecef_y.unwrap());
+            let (ecef_z_sp, ecef_z_hp) = split_position(fixed_ecef_z.unwrap());
+            let ecef_acc = fixed_ecef_accuracy.unwrap();
+
+            let str_ecef_x = "CFG-TMODE-ecef_X,".to_owned() + &ecef_x_sp.to_string();
+            let str_ecef_x_hp = "CFG-TMODE-ecef_X_HP,".to_owned() + &ecef_x_hp.to_string();
+            let str_ecef_y = "CFG-TMODE-ecef_Y,".to_owned() + &ecef_y_sp.to_string();
+            let str_ecef_y_hp = "CFG-TMODE-ecef_Y_HP,".to_owned() + &ecef_y_hp.to_string();
+            let str_ecef_z = "CFG-TMODE-ecef_Z,".to_owned() + &ecef_z_sp.to_string();
+            let str_ecef_z_hp = "CFG-TMODE-ecef_Z_HP,".to_owned() + &ecef_z_hp.to_string();
+            let str_ecef_acc = "CFG-TMODE-FIXED_POS_ACC,".to_owned() + &ecef_acc.to_string();         
+            
+            let ubx_commands = vec![
+                            ("-z", "CFG-TMODE-MODE,2"), //fixed base mode
+                            ("-z", "CFG-TMODE-POS_TYPE,0"), //ecef co-ordinates
+                            ("-z", &str_ecef_x),
+                            ("-z", &str_ecef_x_hp),
+                            ("-z", &str_ecef_y),
+                            ("-z", &str_ecef_y_hp),
+                            ("-z", &str_ecef_z),
+                            ("-z", &str_ecef_z_hp),
+                            ("-z", &str_ecef_acc),
+                        ];
+            GPSControl::run_ubx_commands(ubx_commands);
+        } else {
+            let min_dur_setting = "CFG-TMODE-SVIN_MIN_DUR,".to_owned() + &survey_dwell_time.to_string();
+            let min_acc_setting = "CFG-TMODE-SVIN_ACC_LIMIT,".to_owned() + &survey_position_accuracy.to_string();
+            let ubx_commands = vec![
+                            ("-z", "CFG-TMODE-MODE,1"), //Survey in mode
+                            ("-z", &min_dur_setting),
+                            ("-z", &min_acc_setting),
+                        ];
+            GPSControl::run_ubx_commands(ubx_commands);
+        }
+
 
         log::info!("Starting the ntrip caster.");
         let address_out = "ntrip://".to_string()+username+":"+password+"@"+server+":"+&port.to_string()+"/"+&mount_point.to_string();
@@ -200,6 +247,7 @@ impl GPSControl {
                             ("-z", "CFG-UART2-ENABLED,1"),
                             ("-z", "CFG-UART2-BAUDRATE,115200"),
                             ("-z", "CFG-UART2OUTPROT-NMEA,1"),
+                            ("-z", "CFG-MSGOUT-NMEA_ID_ZDA_UART2,1"), //set ZDA output to 1 Hz.
                             ("-z", "CFG-UART2OUTPROT-RTCM3X,0")
                             //("-z", "CFG-MSGOUT-UBX_RXM_RAWX_USB,1")
                         ];
@@ -261,16 +309,20 @@ impl Handler<GPSMode> for GPSControl {
     fn handle(&mut self, msg: GPSMode, ctx: &mut Context<Self>) -> Self::Result {
         log::info!("Handling set GPS mode in GPS control: {:?}", msg);
         match msg {
-            GPSMode::Base(username, password, server, mount_point, port) => {
-                self.set_base_station_mode(&username, &password, &server, &mount_point, port);
+            GPSMode::Base(username, password, server, mount_point, port,
+                          survey_dwell_time, survey_position_accuracy, 
+                          fixed_ecef_x, fixed_ecef_y, fixed_ecef_z, fixed_ecef_accuracy) => {
+                self.set_base_station_mode(&username, &password, &server, &mount_point, port,
+                                           survey_dwell_time, survey_position_accuracy, 
+                                           fixed_ecef_x, fixed_ecef_y, fixed_ecef_z, fixed_ecef_accuracy);
                 //todo!( "Send set rover to LORA stack and other device." );
             },
             GPSMode::Standalone => {
                 self.set_rover_mode();
                 //todo! ( "Send set base to LORA stack and other device." );
             },
-            GPSMode::RAW(filename, interval, number_of_collections) => { 
-                self.set_raw_mode(&filename, interval, number_of_collections);
+            GPSMode::RAW(data_directory, filename, interval, number_of_collections) => { 
+                self.set_raw_mode(&data_directory, &filename, interval, number_of_collections);
             }
             GPSMode::RtcmIn(username, password, server, mount_point, port) => {
                 self.set_rover_mode();

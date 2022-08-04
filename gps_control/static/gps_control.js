@@ -40,8 +40,8 @@ async function build_page() {
         row.appendChild(value_field); 
     }
 
-    let rtk_div = create_rtk_client_section();
-    container.appendChild(rtk_div);
+    //let rtk_div = create_rtk_client_section();
+    //container.appendChild(rtk_div);
 
     let shutdown_link = document.createElement("A");
     shutdown_link.href = api.shutdown;
