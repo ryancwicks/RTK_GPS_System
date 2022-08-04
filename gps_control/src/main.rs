@@ -1,6 +1,6 @@
 use actix::prelude::*;
 use actix_files::Files;
-use tokio::sync::{broadcast, mpsc};
+//use tokio::sync::{broadcast, mpsc};
 use clap::Parser;
 
 mod web_socket;
@@ -10,8 +10,8 @@ mod lora_streaming;
 mod settings;
 
 use settings::{Cli, Modes, SettingsHandler};
-use port_redirector::input_stream::InputSocket;
-use port_redirector::retransmit_server::RetransmitServer;
+//use port_redirector::input_stream::InputSocket;
+//use port_redirector::retransmit_server::RetransmitServer;
 use gps_interface::gps_control::{GPS_DATA_DIR, GPSMode};
 
 const STATIC_FILES: &str= "./static";
@@ -28,24 +28,24 @@ async fn main() -> std::io::Result<()> {
     let settings_handler = SettingsHandler::new(cli.mode.clone()).start();
 
     //Setup the serial port redirector
-    let input_serial_port = InputSocket::Serial {port_name: cli.gps_tty_port, baudrate: Some(115200), rd: None, tx: None};
+    //let input_serial_port = InputSocket::Serial {port_name: cli.gps_tty_port, baudrate: Some(115200), rd: None, tx: None};
     
     //Broadcast port for reading in data on the input port and outputting it on all broadcast channels
-    let (broadcast_from_input_send, broadcast_from_input_recv) = broadcast::channel(32);
+    //let (broadcast_from_input_send, broadcast_from_input_recv) = broadcast::channel(32);
 
     //Mutiple producers to read data in from the server ports and output on the single output port.
-    let (tx_to_input, rx_to_input) = mpsc::channel(32);
+    //let (tx_to_input, rx_to_input) = mpsc::channel(32);
 
     //open the socket and start the reading process.
-    let mut socket_reader = InputSocket::connect(input_serial_port).await?;
-    tokio::spawn( async move { socket_reader.run_loop(broadcast_from_input_send, rx_to_input).await; });
+    //let mut socket_reader = InputSocket::connect(input_serial_port).await?;
+    //tokio::spawn( async move { socket_reader.run_loop(broadcast_from_input_send, rx_to_input).await; });
 
     // Set up server.
-    let mut retransmit_server = RetransmitServer::new(cli.output_port, tx_to_input, broadcast_from_input_recv).await?;
-    tokio::spawn( async move { retransmit_server.run_loop().await; });
+    //let mut retransmit_server = RetransmitServer::new(cli.output_port, tx_to_input, broadcast_from_input_recv).await?;
+    //tokio::spawn( async move { retransmit_server.run_loop().await; });
     
     let socket_monitor = web_socket::GPSWebSocketMonitor::new().start();
-    let gps_control = gps_interface::gps_control::GPSControl::new(Some(&cli.gpsd_server), Some(cli.gpsd_port), Some(cli.gps_usb_port), Some(cli.output_port)).start();
+    let gps_control = gps_interface::gps_control::GPSControl::new(Some(&cli.gpsd_server), Some(cli.gpsd_port), Some(cli.gps_usb_port), Some(cli.gps_tty_port)/*Some(cli.output_port)*/).start();
     
     let mut gps_interface = gps_interface::gps_interface::GPSInterface::new(Some(&cli.gpsd_server), Some(cli.gpsd_port), socket_monitor.clone());
 

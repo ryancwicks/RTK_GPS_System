@@ -31,7 +31,7 @@ pub struct Cli {
     pub gps_usb_port: String,
 
     /// Secondary GPS serial port
-    #[clap(default_value = "/dev/ttyAMA0", long)]
+    #[clap(default_value = "ttyAMA0", long)]
     pub gps_tty_port: String,
 
     /// Default web port

@@ -37,7 +37,7 @@ pub struct GPSControl {
     ntrip_command: Option<std::process::Child>,
     rinex_collection_command: Option<std::process::Child>,
     gps_usb_port: String,
-    io_port: u16,
+    io_port: String //u16,
 }
 
 impl GPSControl {
@@ -50,7 +50,7 @@ impl GPSControl {
     pub fn new (ip_address: Option<&str>, 
                 port: Option<u16>,
                 gps_usb_port: Option<String>,
-                io_port: Option<u16>) -> Self {
+                io_port: Option<String>) -> Self {
 
         let ip_address = match ip_address {
             Some(ip) => ip,
@@ -66,7 +66,7 @@ impl GPSControl {
         };
         let io_port = match io_port {
             Some(port) => port,
-            None => 4223
+            None => "/dev/ttyAMA0".to_string()
         };
 
         let ip_address = match ip_address.parse::<IpAddr>() {
@@ -131,21 +131,15 @@ impl GPSControl {
         log::info!("Setting the GPS into base station mode and setting the serial port TX to output RTCM messages.");
 
         let ubx_commands = vec![
-                            ("-p", "RESET"),
-                            ("-e", "NMEA"),
-                            ("-e", "BINARY"),
-                            ("-e", "GLONASS"),
-                            ("-d", "BEIDOU"),
-                            ("-d", "GALILEO"),
-                            ("-d", "SBAS"),
-                            ("-e", "GPS"),
-                            ("-d", "RAWX"),
-                            ("-z", "CFG-NMEA-HIGHPREC,1"),
-                            ("-z", "CFG-UART2-ENABLED,1"),
-                            ("-z", "CFG-UART2-BAUDRATE,115200"),
                             ("-z", "CFG-NAVSPG-DYNMODEL,2"), //Stationary mode
                             ("-z", "CFG-UART2OUTPROT-NMEA,0"),
                             ("-z", "CFG-UART2OUTPROT-RTCM3X,1"),
+                            ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1005_UART2,1"),
+                            ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1074_UART2,1"),
+                            ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1084_UART2,1"),
+                            ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1094_UART2,1"),
+                            ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1124_UART2,1"),
+                            ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1230_UART2,5"),
                         ];
         GPSControl::run_ubx_commands(ubx_commands);
 
@@ -155,18 +149,19 @@ impl GPSControl {
                 let high_precision: i64 = ((val - val.floor()) * 100.0).floor() as i64;
                 (std_precision, high_precision)
             };
-            
+            log::info!("Setting up fixed mode base station.");
+
             let (ecef_x_sp, ecef_x_hp) = split_position(fixed_ecef_x.unwrap());
             let (ecef_y_sp, ecef_y_hp) = split_position(fixed_ecef_y.unwrap());
             let (ecef_z_sp, ecef_z_hp) = split_position(fixed_ecef_z.unwrap());
             let ecef_acc = fixed_ecef_accuracy.unwrap();
 
-            let str_ecef_x = "CFG-TMODE-ecef_X,".to_owned() + &ecef_x_sp.to_string();
-            let str_ecef_x_hp = "CFG-TMODE-ecef_X_HP,".to_owned() + &ecef_x_hp.to_string();
-            let str_ecef_y = "CFG-TMODE-ecef_Y,".to_owned() + &ecef_y_sp.to_string();
-            let str_ecef_y_hp = "CFG-TMODE-ecef_Y_HP,".to_owned() + &ecef_y_hp.to_string();
-            let str_ecef_z = "CFG-TMODE-ecef_Z,".to_owned() + &ecef_z_sp.to_string();
-            let str_ecef_z_hp = "CFG-TMODE-ecef_Z_HP,".to_owned() + &ecef_z_hp.to_string();
+            let str_ecef_x = "CFG-TMODE-ECEF_X,".to_owned() + &ecef_x_sp.to_string();
+            let str_ecef_x_hp = "CFG-TMODE-ECEF_X_HP,".to_owned() + &ecef_x_hp.to_string();
+            let str_ecef_y = "CFG-TMODE-ECEF_Y,".to_owned() + &ecef_y_sp.to_string();
+            let str_ecef_y_hp = "CFG-TMODE-ECEF_Y_HP,".to_owned() + &ecef_y_hp.to_string();
+            let str_ecef_z = "CFG-TMODE-ECEF_Z,".to_owned() + &ecef_z_sp.to_string();
+            let str_ecef_z_hp = "CFG-TMODE-ECEF_Z_HP,".to_owned() + &ecef_z_hp.to_string();
             let str_ecef_acc = "CFG-TMODE-FIXED_POS_ACC,".to_owned() + &ecef_acc.to_string();         
             
             let ubx_commands = vec![
@@ -182,6 +177,7 @@ impl GPSControl {
                         ];
             GPSControl::run_ubx_commands(ubx_commands);
         } else {
+            log::info! ("Setting up survey in base station.");
             let min_dur_setting = "CFG-TMODE-SVIN_MIN_DUR,".to_owned() + &survey_dwell_time.to_string();
             let min_acc_setting = "CFG-TMODE-SVIN_ACC_LIMIT,".to_owned() + &survey_position_accuracy.to_string();
             let ubx_commands = vec![
@@ -194,8 +190,8 @@ impl GPSControl {
 
 
         log::info!("Starting the ntrip caster.");
-        let address_out = "ntrip://".to_string()+username+":"+password+"@"+server+":"+&port.to_string()+"/"+&mount_point.to_string();
-        let address_in = "tcpcli://127.0.0.1:".to_string()+&self.io_port.to_string();
+        let address_out = "ntrips://:".to_string()+password+"@"+server+":"+&port.to_string()+"/"+&mount_point.to_string();
+        let address_in = "serial://".to_string() + &self.io_port + ":115200:8:n:1:off"; //"tcpcli://127.0.0.1:".to_string()+&self.io_port.to_string();
 
         log::info! ("Command: str2str -in {} -out {}", address_in, address_out);
 
@@ -212,7 +208,7 @@ impl GPSControl {
         
         log::info!("Setting the GPS to accept RTCM input.");
         let address_in = "ntrip://".to_string()+username+":"+password+"@"+server+":"+&port.to_string()+"/"+&mount_point.to_string();
-        let address_out = "tcpcli://127.0.0.1:".to_string()+&self.io_port.to_string();
+        let address_out = "serial://".to_string() + &self.io_port + ":115200";//"tcpcli://127.0.0.1:".to_string()+&self.io_port.to_string();
 
         log::info! ("Command: str2str -in {} -out {}", address_in, address_out);
 
