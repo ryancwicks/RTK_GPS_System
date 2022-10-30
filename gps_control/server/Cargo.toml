@@ -1,0 +1,28 @@
+[package]
+name = "gps_control"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "3.2.8", features = ["derive"] }
+futures = "0.3.21"
+actix = "0.13"
+actix-web="4.1"
+actix-files = "0.6.2"
+actix-web-actors="4.1"
+env_logger = "0.8"
+log = "0.4"
+pretty_env_logger = "0.4.0"
+gpsd_proto = "0.7.0"
+tokio = { version = "1.16.1", features = ["full"] }
+tokio-serial = "5.4.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.78"
+port_scanner = "0.1.5"
+tokio-util = { version = "0.7.0", features = ["codec"] }
+uuid =  { version = "0.8.2", features = ["v4"] }
+miniz_oxide = "0.5.1"
+bytes = "1.1.0"
+#port_redirector = { git = "https://github.com/ryancwicks/PortRedirectorTool"}
