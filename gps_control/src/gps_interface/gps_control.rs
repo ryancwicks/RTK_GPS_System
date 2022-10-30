@@ -134,6 +134,8 @@ impl GPSControl {
                             ("-z", "CFG-NAVSPG-DYNMODEL,2"), //Stationary mode
                             ("-z", "CFG-UART2OUTPROT-NMEA,0"),
                             ("-z", "CFG-UART2OUTPROT-RTCM3X,1"),
+                            ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1004_UART2,1"),
+                            ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1005_UART2,1"),
                             ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1005_UART2,1"),
                             ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1074_UART2,1"),
                             ("-z", "CFG-MSGOUT-RTCM_3X_TYPE1084_UART2,1"),

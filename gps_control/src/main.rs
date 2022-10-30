@@ -14,7 +14,7 @@ use settings::{Cli, Modes, SettingsHandler};
 //use port_redirector::retransmit_server::RetransmitServer;
 use gps_interface::gps_control::{GPS_DATA_DIR, GPSMode};
 
-const STATIC_FILES: &str= "./static";
+//const STATIC_FILES: &str= "./static";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -78,7 +78,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             // serve static files
             .service(web::resource("/").route(web::get().to(api::index)))
-            .service(Files::new("/static", &STATIC_FILES).index_file("index.html"))
+            .service(Files::new("/static", std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("static")).index_file("index.html"))
             .service(Files::new("/data/", GPS_DATA_DIR))
             // websocket route
             .service(web::resource("/api/subscribe").route(web::get().to(web_socket::ws_index)))
